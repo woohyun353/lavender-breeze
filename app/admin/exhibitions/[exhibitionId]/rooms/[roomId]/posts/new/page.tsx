@@ -104,7 +104,7 @@ export default function NewPostPage() {
         return;
       }
 
-      router.push(`/admin/exhibitions/${exhibition.slug ?? exhibition.id}/rooms/${room.slug ?? room.id}/posts`);
+      router.push(`/admin/exhibitions/${exhibition!.slug ?? exhibition!.id}/rooms/${room!.slug ?? room!.id}/posts`);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "오류가 발생했습니다.");
