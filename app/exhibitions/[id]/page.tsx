@@ -15,7 +15,7 @@ export default async function ExhibitionFirstRoomPage({ params }: Props) {
   const { data: ex } = await supabase
     .from("exhibitions")
     .select("*")
-    .eq(exhibitionSlugOrId)
+    .eq("slug",exhibitionSlugOrId)
     .maybeSingle();
   if (!ex) {
     return (
