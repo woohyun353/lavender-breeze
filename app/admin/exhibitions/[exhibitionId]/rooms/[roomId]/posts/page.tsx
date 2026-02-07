@@ -77,6 +77,15 @@ export default function RoomPostsListPage() {
       });
   }, [exhibition?.id, roomSlugOrId]);
 
+  useEffect(() => {
+    if (!exhibition || !room) return;
+    const exSlug = exhibition.slug ?? exhibitionSlugOrId;
+    const roomSlug = room.slug ?? roomSlugOrId;
+    if ((isUuid(exhibitionSlugOrId) && exhibition.slug) || (isUuid(roomSlugOrId) && room.slug)) {
+      router.replace(`/admin/exhibitions/${exSlug}/rooms/${roomSlug}/posts`);
+    }
+  }, [exhibition, room, exhibitionSlugOrId, roomSlugOrId, router]);
+
   async function handleDelete(postId: string) {
     if (!confirm("이 포스트를 삭제할까요?")) return;
     setDeletingId(postId);

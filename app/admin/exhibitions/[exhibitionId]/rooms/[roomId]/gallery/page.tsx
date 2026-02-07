@@ -78,6 +78,15 @@ export default function RoomGalleryListPage() {
       });
   }, [exhibition?.id, roomSlugOrId]);
 
+  useEffect(() => {
+    if (!exhibition || !room) return;
+    const exSlug = exhibition.slug ?? exhibitionSlugOrId;
+    const roomSlug = room.slug ?? roomSlugOrId;
+    if ((isUuid(exhibitionSlugOrId) && exhibition.slug) || (isUuid(roomSlugOrId) && room.slug)) {
+      router.replace(`/admin/exhibitions/${exSlug}/rooms/${roomSlug}/gallery`);
+    }
+  }, [exhibition, room, exhibitionSlugOrId, roomSlugOrId, router]);
+
   async function handleDelete(itemId: string) {
     if (!confirm("이 갤러리 항목을 삭제할까요?")) return;
     setDeletingId(itemId);

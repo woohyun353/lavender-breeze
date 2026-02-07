@@ -33,9 +33,15 @@ export default function NewRoomPage() {
       .eq(isUuid(exhibitionSlugOrId) ? "id" : "slug", exhibitionSlugOrId)
       .maybeSingle()
       .then(({ data }) => {
-        if (data) setExhibition(data as Exhibition);
+        if (data) {
+          const ex = data as Exhibition;
+          setExhibition(ex);
+          if (isUuid(exhibitionSlugOrId) && ex.slug) {
+            router.replace(`/admin/exhibitions/${ex.slug}/rooms/new`);
+          }
+        }
       });
-  }, [exhibitionSlugOrId]);
+  }, [exhibitionSlugOrId, router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

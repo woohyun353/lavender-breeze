@@ -1,7 +1,10 @@
 "use client";
 
+import { isUuid } from "@/lib/uuid";
 import { supabaseClient } from "@/lib/supabase/client";
+import type { Exhibition } from "@/types/exhibition";
 import type { GalleryItem } from "@/types/gallery-item";
+import type { Room } from "@/types/room";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -18,6 +21,8 @@ export default function EditGalleryItemPage() {
   const itemId = params.itemId as string;
 
   const [item, setItem] = useState<GalleryItem | null>(null);
+  const [exhibition, setExhibition] = useState<Exhibition | null>(null);
+  const [room, setRoom] = useState<Room | null>(null);
   const [caption, setCaption] = useState("");
   const [description, setDescription] = useState("");
   const [order, setOrder] = useState(0);
@@ -25,6 +30,9 @@ export default function EditGalleryItemPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+
+  const exhibitionPath = exhibition?.slug ?? exhibitionId;
+  const roomPath = room?.slug ?? roomId;
 
   useEffect(() => {
     supabaseClient.auth.getSession().then(({ data: { session } }) => {
@@ -55,6 +63,39 @@ export default function EditGalleryItemPage() {
         setLoading(false);
       });
   }, [itemId]);
+
+  useEffect(() => {
+    if (!item?.room_id) return;
+    void supabaseClient
+      .from("rooms")
+      .select("*")
+      .eq("id", item.room_id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) setRoom(data as Room);
+      });
+  }, [item?.room_id]);
+
+  useEffect(() => {
+    if (!room?.exhibition_id) return;
+    void supabaseClient
+      .from("exhibitions")
+      .select("*")
+      .eq("id", room.exhibition_id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) setExhibition(data as Exhibition);
+      });
+  }, [room?.exhibition_id]);
+
+  useEffect(() => {
+    if (!exhibition || !room) return;
+    const exSlug = exhibition.slug ?? exhibitionId;
+    const roomSlug = room.slug ?? roomId;
+    if ((isUuid(exhibitionId) && exhibition.slug) || (isUuid(roomId) && room.slug)) {
+      router.replace(`/admin/exhibitions/${exSlug}/rooms/${roomSlug}/gallery/${itemId}`);
+    }
+  }, [exhibition, room, exhibitionId, roomId, itemId, router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -120,7 +161,7 @@ export default function EditGalleryItemPage() {
       <div className="mx-auto max-w-xl">
         <p className="text-red-600">{error}</p>
         <Link
-          href={`/admin/exhibitions/${exhibitionId}/rooms/${roomId}/gallery`}
+          href={`/admin/exhibitions/${exhibitionPath}/rooms/${roomPath}/gallery`}
           className="mt-4 inline-block text-sm underline"
         >
           갤러리 목록으로
@@ -133,7 +174,7 @@ export default function EditGalleryItemPage() {
     <div className="mx-auto max-w-xl">
       <div className="mb-6">
         <Link
-          href={`/admin/exhibitions/${exhibitionId}/rooms/${roomId}/gallery`}
+          href={`/admin/exhibitions/${exhibitionPath}/rooms/${roomPath}/gallery`}
           className="text-sm text-neutral-600 underline hover:text-neutral-900"
         >
           ← 갤러리 목록
@@ -218,7 +259,7 @@ export default function EditGalleryItemPage() {
             {submitting ? "저장 중…" : "저장"}
           </button>
           <Link
-            href={`/admin/exhibitions/${exhibitionId}/rooms/${roomId}/gallery`}
+            href={`/admin/exhibitions/${exhibitionPath}/rooms/${roomPath}/gallery`}
             className="rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
           >
             취소

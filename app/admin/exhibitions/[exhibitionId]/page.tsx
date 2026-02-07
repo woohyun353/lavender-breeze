@@ -54,8 +54,11 @@ export default function ExhibitionDetailPage() {
         setOrder(ex.order ?? 0);
         setSlug(ex.slug ?? "");
         setLoading(false);
+        if (isUuid(exhibitionId) && ex.slug) {
+          router.replace(`/admin/exhibitions/${ex.slug}`);
+        }
       });
-  }, [exhibitionId]);
+  }, [exhibitionId, router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

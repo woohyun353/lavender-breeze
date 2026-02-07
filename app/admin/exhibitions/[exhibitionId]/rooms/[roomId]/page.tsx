@@ -77,6 +77,15 @@ export default function RoomDetailPage() {
       });
   }, [exhibition?.id, roomSlugOrId]);
 
+  useEffect(() => {
+    if (!exhibition || !room) return;
+    const exSlug = exhibition.slug ?? exhibitionSlugOrId;
+    const roomSlug = room.slug ?? roomSlugOrId;
+    if ((isUuid(exhibitionSlugOrId) && exhibition.slug) || (isUuid(roomSlugOrId) && room.slug)) {
+      router.replace(`/admin/exhibitions/${exSlug}/rooms/${roomSlug}`);
+    }
+  }, [exhibition, room, exhibitionSlugOrId, roomSlugOrId, router]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!room) return;

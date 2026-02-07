@@ -26,7 +26,13 @@ export default function ExhibitionRoomsListPage() {
       .eq(isUuid(exhibitionId) ? "id" : "slug", exhibitionId)
       .maybeSingle()
       .then(({ data, error }) => {
-        if (!error && data) setExhibition(data as Exhibition);
+        if (!error && data) {
+          const ex = data as Exhibition;
+          setExhibition(ex);
+          if (isUuid(exhibitionId) && ex.slug) {
+            router.replace(`/admin/exhibitions/${ex.slug}/rooms`);
+          }
+        }
       });
   }
 
@@ -59,7 +65,7 @@ export default function ExhibitionRoomsListPage() {
 
   useEffect(() => {
     fetchExhibition();
-  }, [exhibitionId]);
+  }, [exhibitionId, router]);
 
   useEffect(() => {
     if (!exhibition) return;

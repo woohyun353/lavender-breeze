@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { isUuid } from "@/lib/uuid";
 import { supabaseServerClient } from "@/lib/supabase/server";
 import { RoomGallery } from "./RoomGallery";
@@ -114,6 +114,9 @@ export default async function RoomPage({ params }: Props) {
       );
     }
     notFound();
+  }
+  if (isUuid(roomId) && roomRow.slug) {
+    redirect(`/rooms/${roomRow.slug}`);
   }
 
   const room = roomRow as Pick<Room, "id" | "slug" | "title" | "subtitle" | "description" | "exhibition_id" | "type" | "order">;

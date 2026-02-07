@@ -12,7 +12,7 @@ export default async function ExhibitionFirstRoomPage({ params }: Props) {
 
   const { data: ex } = await supabase
     .from("exhibitions")
-    .select("id")
+    .select("id, slug")
     .eq(isUuid(exhibitionSlugOrId) ? "id" : "slug", exhibitionSlugOrId)
     .maybeSingle();
   if (!ex) {
@@ -29,6 +29,9 @@ export default async function ExhibitionFirstRoomPage({ params }: Props) {
         </div>
       </main>
     );
+  }
+  if (isUuid(exhibitionSlugOrId) && (ex as { slug?: string | null }).slug) {
+    redirect(`/exhibitions/${(ex as { slug: string }).slug}`);
   }
 
   const { data: rows } = await supabase
