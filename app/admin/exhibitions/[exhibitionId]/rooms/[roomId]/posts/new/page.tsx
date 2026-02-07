@@ -51,8 +51,8 @@ export default function NewPostPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!room) {
-      setError("전시실을 찾을 수 없습니다.");
+    if (!exhibition || !room) {
+      setError("전시 또는 전시실을 찾을 수 없습니다.");
       return;
     }
     setError(null);
