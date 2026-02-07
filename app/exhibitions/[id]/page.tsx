@@ -58,5 +58,5 @@ export default async function ExhibitionFirstRoomPage({ params }: Props) {
 
   const first = rooms[0];
   const roomPath = first.slug
-  redirect(`/rooms/${roomPath}`);
+  redirect(`/rooms/${exhibitionSlugOrId}`);
 }
