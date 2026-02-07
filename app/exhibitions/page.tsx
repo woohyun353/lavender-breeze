@@ -40,7 +40,7 @@ export default async function ExhibitionsPage() {
               return (
                 <Link
                   key={ex.id}
-                  href={`/exhibitions/${ex.slug && !isUuid(ex.slug) ? ex.slug : ex.id}`}
+                  href={`/exhibitions/${ex.slug}`}
                   className="group block"
                 >
                   <div className="mx-auto w-full max-w-[320px]">

@@ -14,8 +14,8 @@ export default async function ExhibitionFirstRoomPage({ params }: Props) {
 
   const { data: ex } = await supabase
     .from("exhibitions")
-    .select("id, slug")
-    .eq(isUuid(exhibitionSlugOrId) ? "id" : "slug", exhibitionSlugOrId)
+    .select("*")
+    .eq(exhibitionSlugOrId)
     .maybeSingle();
   if (!ex) {
     return (
