@@ -15,7 +15,7 @@ export default async function ExhibitionFirstRoomPage({ params }: Props) {
   const { data: ex } = await supabase
     .from("exhibitions")
     .select("*")
-    .eq("slug",exhibitionSlugOrId)
+    .eq(isUuid(exhibitionSlugOrId) ? "id" : "slug", exhibitionSlugOrId)
     .maybeSingle();
   if (!ex) {
     return (
@@ -57,6 +57,6 @@ export default async function ExhibitionFirstRoomPage({ params }: Props) {
   }
 
   const first = rooms[0];
-  const roomPath = first.slug
-  redirect(`/rooms/${exhibitionSlugOrId}`);
+  const roomPath = first.slug && !isUuid(first.slug) ? first.slug : first.id;
+  redirect(`/rooms/${roomPath}`);
 }
