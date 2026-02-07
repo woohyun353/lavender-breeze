@@ -39,8 +39,8 @@ export default function ExhibitionDetailPage() {
       .select("*")
       .eq("id", exhibitionId)
       .single()
-      .then(({ data, err }) => {
-        if (err || !data) {
+      .then(({ data, error }) => {
+        if (error || !data) {
           setError("전시를 불러올 수 없습니다.");
           setLoading(false);
           return;

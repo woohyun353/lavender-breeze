@@ -42,8 +42,8 @@ export default function RoomDetailPage() {
       .select("*")
       .eq("id", roomId)
       .single()
-      .then(({ data, err }) => {
-        if (err || !data) {
+      .then(({ data, error }) => {
+        if (error || !data) {
           setError("전시실을 불러올 수 없습니다.");
           setLoading(false);
           return;

@@ -41,8 +41,8 @@ export default function EditGalleryItemPage() {
       .select("*")
       .eq("id", itemId)
       .single()
-      .then(({ data, err }) => {
-        if (err || !data) {
+      .then(({ data, error }) => {
+        if (error || !data) {
           setError("갤러리 항목을 불러올 수 없습니다.");
           setLoading(false);
           return;

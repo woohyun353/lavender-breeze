@@ -41,8 +41,8 @@ export default function EditPostPage() {
       .select("*")
       .eq("id", postId)
       .single()
-      .then(({ data, err }) => {
-        if (err || !data) {
+      .then(({ data, error }) => {
+        if (error || !data) {
           setError("포스트를 불러올 수 없습니다.");
           setLoading(false);
           return;
