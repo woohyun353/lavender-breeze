@@ -1,5 +1,6 @@
 "use client";
 
+import { isUuid } from "@/lib/uuid";
 import { supabaseClient } from "@/lib/supabase/client";
 import type { Exhibition } from "@/types/exhibition";
 import Image from "next/image";
@@ -38,7 +39,7 @@ export default function ExhibitionDetailPage() {
     supabaseClient
       .from("exhibitions")
       .select("*")
-      .or(`slug.eq.${exhibitionId},id.eq.${exhibitionId}`)
+      .eq(isUuid(exhibitionId) ? "id" : "slug", exhibitionId)
       .maybeSingle()
       .then(({ data, error }) => {
         if (error || !data) {

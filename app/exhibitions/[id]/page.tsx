@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { isUuid } from "@/lib/uuid";
 import { supabaseServerClient } from "@/lib/supabase/server";
 import type { Room } from "@/types/room";
 
@@ -12,7 +13,7 @@ export default async function ExhibitionFirstRoomPage({ params }: Props) {
   const { data: ex } = await supabase
     .from("exhibitions")
     .select("id")
-    .or(`slug.eq.${exhibitionSlugOrId},id.eq.${exhibitionSlugOrId}`)
+    .eq(isUuid(exhibitionSlugOrId) ? "id" : "slug", exhibitionSlugOrId)
     .maybeSingle();
   if (!ex) {
     return (

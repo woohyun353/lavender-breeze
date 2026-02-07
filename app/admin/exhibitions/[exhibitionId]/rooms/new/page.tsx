@@ -1,5 +1,6 @@
 "use client";
 
+import { isUuid } from "@/lib/uuid";
 import { supabaseClient } from "@/lib/supabase/client";
 import type { Exhibition } from "@/types/exhibition";
 import Link from "next/link";
@@ -29,7 +30,7 @@ export default function NewRoomPage() {
     void supabaseClient
       .from("exhibitions")
       .select("*")
-      .or(`slug.eq.${exhibitionSlugOrId},id.eq.${exhibitionSlugOrId}`)
+      .eq(isUuid(exhibitionSlugOrId) ? "id" : "slug", exhibitionSlugOrId)
       .maybeSingle()
       .then(({ data }) => {
         if (data) setExhibition(data as Exhibition);

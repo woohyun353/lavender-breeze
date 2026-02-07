@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { isUuid } from "@/lib/uuid";
 import { supabaseServerClient } from "@/lib/supabase/server";
 import { RoomGallery } from "./RoomGallery";
 import { RoomPosts } from "./RoomPosts";
@@ -87,7 +88,7 @@ export default async function RoomPage({ params }: Props) {
   const { data: roomRow, error: roomError } = await supabase
     .from("rooms")
     .select("id, slug, title, subtitle, description, exhibition_id, type, order")
-    .or(`slug.eq.${roomId},id.eq.${roomId}`)
+    .eq(isUuid(roomId) ? "id" : "slug", roomId)
     .maybeSingle();
 
   if (roomError || !roomRow) {

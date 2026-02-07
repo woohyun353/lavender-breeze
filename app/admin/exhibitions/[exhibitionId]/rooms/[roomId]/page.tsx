@@ -1,5 +1,6 @@
 "use client";
 
+import { isUuid } from "@/lib/uuid";
 import { supabaseClient } from "@/lib/supabase/client";
 import type { Room } from "@/types/room";
 import type { Exhibition } from "@/types/exhibition";
@@ -43,7 +44,7 @@ export default function RoomDetailPage() {
     void supabaseClient
       .from("exhibitions")
       .select("*")
-      .or(`slug.eq.${exhibitionSlugOrId},id.eq.${exhibitionSlugOrId}`)
+      .eq(isUuid(exhibitionSlugOrId) ? "id" : "slug", exhibitionSlugOrId)
       .maybeSingle()
       .then(({ data }) => {
         if (data) setExhibition(data as Exhibition);
@@ -56,7 +57,7 @@ export default function RoomDetailPage() {
       .from("rooms")
       .select("*")
       .eq("exhibition_id", exhibition.id)
-      .or(`slug.eq.${roomSlugOrId},id.eq.${roomSlugOrId}`)
+      .eq(isUuid(roomSlugOrId) ? "id" : "slug", roomSlugOrId)
       .maybeSingle()
       .then(({ data, error: err }) => {
         if (err || !data) {
