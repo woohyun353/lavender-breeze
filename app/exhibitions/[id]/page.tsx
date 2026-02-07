@@ -4,6 +4,8 @@ import { isUuid } from "@/lib/uuid";
 import { supabaseServerClient } from "@/lib/supabase/server";
 import type { Room } from "@/types/room";
 
+export const dynamic = "force-dynamic";
+
 type Props = { params: Promise<{ id: string }> };
 
 export default async function ExhibitionFirstRoomPage({ params }: Props) {

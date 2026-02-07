@@ -4,6 +4,8 @@ import { isUuid } from "@/lib/uuid";
 import { supabaseServerClient } from "@/lib/supabase/server";
 import type { Exhibition } from "@/types/exhibition";
 
+export const dynamic = "force-dynamic";
+
 export default async function ExhibitionsPage() {
   const supabase = supabaseServerClient();
   const { data: rows } = await supabase

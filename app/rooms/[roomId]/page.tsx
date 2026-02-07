@@ -8,6 +8,8 @@ import { RoomSwitcher } from "./RoomSwitcher";
 import type { Room } from "@/types/room";
 import type { Post } from "@/types/post";
 
+export const dynamic = "force-dynamic";
+
 // GalleryItem 형식 (RoomGallery용)
 type GalleryItem = {
   id: string;
