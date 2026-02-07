@@ -115,7 +115,7 @@ export default async function RoomPage({ params }: Props) {
     }
     notFound();
   }
-  if (isUuid(roomId) && roomRow.slug) {
+  if (isUuid(roomId) && roomRow.slug && !isUuid(roomRow.slug)) {
     redirect(`/rooms/${roomRow.slug}`);
   }
 

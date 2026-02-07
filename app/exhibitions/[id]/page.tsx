@@ -30,7 +30,7 @@ export default async function ExhibitionFirstRoomPage({ params }: Props) {
       </main>
     );
   }
-  if (isUuid(exhibitionSlugOrId) && (ex as { slug?: string | null }).slug) {
+  if (isUuid(exhibitionSlugOrId) && (ex as { slug?: string | null }).slug && !isUuid((ex as { slug: string }).slug)) {
     redirect(`/exhibitions/${(ex as { slug: string }).slug}`);
   }
 
@@ -57,5 +57,7 @@ export default async function ExhibitionFirstRoomPage({ params }: Props) {
     );
   }
 
-  redirect(`/rooms/${rooms[0].slug ?? rooms[0].id}`);
+  const first = rooms[0];
+  const roomPath = first.slug && !isUuid(first.slug) ? first.slug : first.id;
+  redirect(`/rooms/${roomPath}`);
 }

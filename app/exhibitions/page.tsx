@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { isUuid } from "@/lib/uuid";
 import { supabaseServerClient } from "@/lib/supabase/server";
 import type { Exhibition } from "@/types/exhibition";
 
@@ -37,7 +38,7 @@ export default async function ExhibitionsPage() {
               return (
                 <Link
                   key={ex.id}
-                  href={`/exhibitions/${ex.slug ?? ex.id}`}
+                  href={`/exhibitions/${ex.slug && !isUuid(ex.slug) ? ex.slug : ex.id}`}
                   className="group block"
                 >
                   <div className="mx-auto w-full max-w-[320px]">
