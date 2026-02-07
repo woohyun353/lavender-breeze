@@ -54,7 +54,7 @@ export default function ExhibitionDetailPage() {
         setOrder(ex.order ?? 0);
         setSlug(ex.slug ?? "");
         setLoading(false);
-        if (isUuid(exhibitionId) && ex.slug) {
+        if (isUuid(exhibitionId) && ex.slug && !isUuid(ex.slug)) {
           router.replace(`/admin/exhibitions/${ex.slug}`);
         }
       });
@@ -104,6 +104,8 @@ export default function ExhibitionDetailPage() {
         return;
       }
 
+      const newPath = slug.trim() || exhibition.slug || exhibition.id;
+      router.replace(`/admin/exhibitions/${newPath}`);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "오류가 발생했습니다.");

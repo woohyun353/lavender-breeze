@@ -81,7 +81,7 @@ export default function RoomDetailPage() {
     if (!exhibition || !room) return;
     const exSlug = exhibition.slug ?? exhibitionSlugOrId;
     const roomSlug = room.slug ?? roomSlugOrId;
-    if ((isUuid(exhibitionSlugOrId) && exhibition.slug) || (isUuid(roomSlugOrId) && room.slug)) {
+    if ((isUuid(exhibitionSlugOrId) && exhibition.slug && !isUuid(exhibition.slug)) || (isUuid(roomSlugOrId) && room.slug && !isUuid(room.slug))) {
       router.replace(`/admin/exhibitions/${exSlug}/rooms/${roomSlug}`);
     }
   }, [exhibition, room, exhibitionSlugOrId, roomSlugOrId, router]);
@@ -132,6 +132,9 @@ export default function RoomDetailPage() {
         return;
       }
 
+      const exPath = exhibition?.slug ?? exhibitionSlugOrId;
+      const roomPath = slug.trim() || room.slug ?? roomSlugOrId ?? room.id;
+      router.replace(`/admin/exhibitions/${exPath}/rooms/${roomPath}`);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "오류가 발생했습니다.");
