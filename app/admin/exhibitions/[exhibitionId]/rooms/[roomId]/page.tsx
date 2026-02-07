@@ -133,7 +133,7 @@ export default function RoomDetailPage() {
       }
 
       const exPath = exhibition?.slug ?? exhibitionSlugOrId;
-      const roomPath = slug.trim() || room.slug ?? roomSlugOrId ?? room.id;
+      const roomPath = slug.trim() || (room.slug ?? roomSlugOrId ?? room.id);
       router.replace(`/admin/exhibitions/${exPath}/rooms/${roomPath}`);
       router.refresh();
     } catch (err) {
