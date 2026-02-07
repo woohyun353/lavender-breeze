@@ -88,10 +88,12 @@ export default async function RoomPage({ params }: Props) {
   const supabase = supabaseServerClient();
 
   const { data: roomRow, error: roomError } = await supabase
-    .from("rooms")
-    .select("id, slug, title, subtitle, description, exhibition_id, type, order")
-    .eq(isUuid(roomId) ? "id" : "slug", roomId)
-    .maybeSingle();
+  .from('rooms')
+  .select(
+  `id, title, type, subtitle, description, cover_image_url, exhibition_id, order, slug, exhibitions!inner ()
+  `)
+  .eq('exhibitions.slug', roomId)
+  .maybeSingle();
 
   if (roomError || !roomRow) {
     const fallback = DUMMY_FALLBACK[roomId];
@@ -116,9 +118,6 @@ export default async function RoomPage({ params }: Props) {
       );
     }
     notFound();
-  }
-  if (isUuid(roomId) && roomRow.slug && !isUuid(roomRow.slug)) {
-    redirect(`/rooms/${roomRow.slug}`);
   }
 
   const room = roomRow as Pick<Room, "id" | "slug" | "title" | "subtitle" | "description" | "exhibition_id" | "type" | "order">;
