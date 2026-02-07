@@ -1,26 +1,53 @@
 @import "tailwindcss";
 
+/* ========== 디자인 토큰 (Design Tokens) ========== */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* 배경: 따뜻한 아이보리 */
+  --color-bg: #faf7f2;
+  /* 패널/카드: 연한 회색 */
+  --color-panel: #ebe8e2;
+  /* 본문 텍스트: 거의 검정 */
+  --color-body: #1a1a1a;
+  /* 글 읽기 좋은 최대 너비 (65ch ≈ 65자, 가독성 좋은 줄 길이) */
+  --width-read: 65ch;
+  /* 섹션 여백 통일 */
+  --spacing-section: 2rem;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  /* 색상: bg-background, bg-panel, text-body 등 */
+  --color-background: var(--color-bg);
+  --color-panel: var(--color-panel);
+  --color-body: var(--color-body);
+  /* 폰트 */
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  /* max-w-read (글 읽기 좋은 너비) */
+  --max-width-read: var(--width-read);
+  /* p-section, m-section 등 섹션 여백 */
+  --spacing-section: 2rem;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --color-bg: #0f0e0c;
+    --color-panel: #1c1a17;
+    --color-body: #e8e6e1;
   }
 }
 
+/* ========== 기본 스타일 ========== */
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-bg);
+  color: var(--color-body);
+}
+
+/* 읽기 영역: 본문 콘텐츠용 max-width (유틸 클래스) */
+.read-content {
+  max-width: var(--width-read);
+}
+
+/* 섹션 여백 통일 (유틸 클래스) */
+.section-padding {
+  padding: var(--spacing-section);
 }

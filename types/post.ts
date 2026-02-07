@@ -1,0 +1,8 @@
+export type Post = {
+  id: string;
+  room_id: string | null;
+  title: string;
+  content: string | null;
+  thumbnail: string | null;
+  order: number | null;
+};

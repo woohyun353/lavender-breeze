@@ -1,0 +1,279 @@
+"use client";
+
+import { supabaseClient } from "@/lib/supabase/client";
+import type { Room } from "@/types/room";
+import Image from "next/image";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+
+const STORAGE_BUCKET = "artworks";
+const STORAGE_PREFIX_ROOMS = "rooms";
+
+export default function RoomDetailPage() {
+  const params = useParams();
+  const router = useRouter();
+  const exhibitionId = params.exhibitionId as string;
+  const roomId = params.roomId as string;
+
+  const [room, setRoom] = useState<Room | null>(null);
+  const [title, setTitle] = useState("");
+  const [subtitle, setSubtitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [order, setOrder] = useState(0);
+  const [type, setType] = useState<"text" | "image" | "">("text");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    supabaseClient.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        router.replace("/admin/login");
+        return;
+      }
+    });
+  }, [router]);
+
+  useEffect(() => {
+    supabaseClient
+      .from("rooms")
+      .select("*")
+      .eq("id", roomId)
+      .single()
+      .then(({ data, err }) => {
+        if (err || !data) {
+          setError("전시실을 불러올 수 없습니다.");
+          setLoading(false);
+          return;
+        }
+        const r = data as Room;
+        setRoom(r);
+        setTitle(r.title ?? "");
+        setSubtitle(r.subtitle ?? "");
+        setDescription(r.description ?? "");
+        setOrder(r.order ?? 0);
+        setType((r.type as "text" | "image") ?? "text");
+        setLoading(false);
+      });
+  }, [roomId]);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!room) return;
+    setError(null);
+    setSubmitting(true);
+
+    try {
+      let coverImageUrl: string | null = room.cover_image_url ?? null;
+
+      if (imageFile) {
+        const ext = (imageFile.name.split(".").pop() || "png").toLowerCase();
+        const safeExt = /^[a-z0-9]+$/.test(ext) ? ext : "png";
+        const path = `${STORAGE_PREFIX_ROOMS}/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${safeExt}`;
+        const { error: uploadError } = await supabaseClient.storage
+          .from(STORAGE_BUCKET)
+          .upload(path, imageFile, { upsert: true });
+
+        if (uploadError) {
+          setError("이미지 업로드 실패: " + uploadError.message);
+          setSubmitting(false);
+          return;
+        }
+
+        const { data } = supabaseClient.storage.from(STORAGE_BUCKET).getPublicUrl(path);
+        coverImageUrl = data.publicUrl;
+      }
+
+      const { error: updateError } = await supabaseClient
+        .from("rooms")
+        .update({
+          title: title.trim(),
+          subtitle: subtitle.trim() || null,
+          description: description.trim() || null,
+          cover_image_url: coverImageUrl,
+          order: order,
+          type: type || null,
+        })
+        .eq("id", roomId);
+
+      if (updateError) {
+        setError("저장 실패: " + updateError.message);
+        setSubmitting(false);
+        return;
+      }
+
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "오류가 발생했습니다.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <p className="text-neutral-500">불러오는 중…</p>
+      </div>
+    );
+  }
+
+  if (!room) {
+    return (
+      <div className="mx-auto max-w-xl">
+        <p className="text-red-600">{error}</p>
+        <Link
+          href={`/admin/exhibitions/${exhibitionId}/rooms`}
+          className="mt-4 inline-block text-sm underline"
+        >
+          전시실 목록으로
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-auto max-w-2xl">
+      <div className="mb-6">
+        <Link
+          href={`/admin/exhibitions/${exhibitionId}/rooms`}
+          className="text-sm text-neutral-600 underline hover:text-neutral-900"
+        >
+          ← 전시실 목록
+        </Link>
+      </div>
+
+      <div className="mb-8 grid gap-4 sm:grid-cols-2">
+        <Link
+          href={`/admin/exhibitions/${exhibitionId}/rooms/${roomId}/posts`}
+          className="flex items-center justify-between rounded-lg border border-neutral-200 bg-white p-4 hover:bg-neutral-50"
+        >
+          <span className="font-medium">포스트 관리</span>
+          <span className="text-neutral-400">→</span>
+        </Link>
+        <Link
+          href={`/admin/exhibitions/${exhibitionId}/rooms/${roomId}/gallery`}
+          className="flex items-center justify-between rounded-lg border border-neutral-200 bg-white p-4 hover:bg-neutral-50"
+        >
+          <span className="font-medium">갤러리 관리</span>
+          <span className="text-neutral-400">→</span>
+        </Link>
+      </div>
+
+      <section className="rounded-lg border border-neutral-200 bg-white p-6 shadow-sm">
+        <h2 className="mb-4 text-lg font-semibold">전시실 기본 정보</h2>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <div>
+            <label htmlFor="title" className="mb-1 block text-sm font-medium text-neutral-700">
+              제목 *
+            </label>
+            <input
+              id="title"
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+              className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
+            />
+          </div>
+          <div>
+            <label htmlFor="subtitle" className="mb-1 block text-sm font-medium text-neutral-700">
+              부제목
+            </label>
+            <input
+              id="subtitle"
+              type="text"
+              value={subtitle}
+              onChange={(e) => setSubtitle(e.target.value)}
+              className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
+            />
+          </div>
+          <div>
+            <label htmlFor="order" className="mb-1 block text-sm font-medium text-neutral-700">
+              순서
+            </label>
+            <input
+              id="order"
+              type="number"
+              value={order}
+              onChange={(e) => setOrder(Number(e.target.value))}
+              className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
+            />
+          </div>
+          <div>
+            <label htmlFor="type" className="mb-1 block text-sm font-medium text-neutral-700">
+              타입
+            </label>
+            <select
+              id="type"
+              value={type}
+              onChange={(e) => setType(e.target.value as "text" | "image" | "")}
+              className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
+            >
+              <option value="">선택</option>
+              <option value="text">text</option>
+              <option value="image">image</option>
+            </select>
+          </div>
+          <div>
+            <label htmlFor="description" className="mb-1 block text-sm font-medium text-neutral-700">
+              설명
+            </label>
+            <textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={4}
+              className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-neutral-700">
+              커버 이미지
+            </label>
+            {room.cover_image_url && !imageFile && (
+              <div className="relative mb-2 h-32 w-48 overflow-hidden rounded border border-neutral-200 bg-neutral-100">
+                <Image
+                  src={room.cover_image_url}
+                  alt=""
+                  fill
+                  className="object-contain"
+                  sizes="192px"
+                />
+              </div>
+            )}
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setImageFile(e.target.files?.[0] ?? null)}
+              className="w-full text-sm text-neutral-600 file:mr-2 file:rounded-md file:border-0 file:bg-neutral-100 file:px-3 file:py-2 file:text-sm file:font-medium file:text-neutral-700"
+            />
+            <p className="mt-1 text-xs text-neutral-500">
+              새 파일을 선택하면 기존 이미지를 대체합니다.
+            </p>
+          </div>
+          {error && (
+            <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
+          )}
+          <div className="flex gap-3 pt-2">
+            <button
+              type="submit"
+              disabled={submitting}
+              className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 disabled:opacity-50"
+            >
+              {submitting ? "저장 중…" : "저장"}
+            </button>
+            <Link
+              href={`/admin/exhibitions/${exhibitionId}/rooms`}
+              className="rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+            >
+              취소
+            </Link>
+          </div>
+        </form>
+      </section>
+    </div>
+  );
+}
