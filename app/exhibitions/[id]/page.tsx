@@ -32,9 +32,6 @@ export default async function ExhibitionFirstRoomPage({ params }: Props) {
       </main>
     );
   }
-  if (isUuid(exhibitionSlugOrId) && (ex as { slug?: string | null }).slug && !isUuid((ex as { slug: string }).slug)) {
-    redirect(`/exhibitions/${(ex as { slug: string }).slug}`);
-  }
 
   const { data: rows } = await supabase
     .from("rooms")
