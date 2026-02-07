@@ -2,6 +2,8 @@
 
 import { supabaseClient } from "@/lib/supabase/client";
 import type { Post } from "@/types/post";
+import type { Room } from "@/types/room";
+import type { Exhibition } from "@/types/exhibition";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -9,14 +11,16 @@ import { useEffect, useState } from "react";
 export default function RoomPostsListPage() {
   const params = useParams();
   const router = useRouter();
-  const exhibitionId = params.exhibitionId as string;
-  const roomId = params.roomId as string;
+  const exhibitionSlugOrId = params.exhibitionId as string;
+  const roomSlugOrId = params.roomId as string;
 
+  const [exhibition, setExhibition] = useState<Exhibition | null>(null);
+  const [room, setRoom] = useState<Room | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  function fetchPosts() {
+  function fetchPosts(roomId: string) {
     setLoading(true);
     void supabaseClient
       .from("posts")
@@ -44,8 +48,33 @@ export default function RoomPostsListPage() {
   }, [router]);
 
   useEffect(() => {
-    fetchPosts();
-  }, [roomId]);
+    void supabaseClient
+      .from("exhibitions")
+      .select("*")
+      .or(`slug.eq.${exhibitionSlugOrId},id.eq.${exhibitionSlugOrId}`)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) setExhibition(data as Exhibition);
+      });
+  }, [exhibitionSlugOrId]);
+
+  useEffect(() => {
+    if (!exhibition) return;
+    void supabaseClient
+      .from("rooms")
+      .select("*")
+      .eq("exhibition_id", exhibition.id)
+      .or(`slug.eq.${roomSlugOrId},id.eq.${roomSlugOrId}`)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) {
+          setRoom(data as Room);
+          fetchPosts((data as Room).id);
+        } else {
+          setLoading(false);
+        }
+      });
+  }, [exhibition?.id, roomSlugOrId]);
 
   async function handleDelete(postId: string) {
     if (!confirm("이 포스트를 삭제할까요?")) return;
@@ -56,16 +85,19 @@ export default function RoomPostsListPage() {
       console.error(error);
       return;
     }
-    fetchPosts();
+    if (room) fetchPosts(room.id);
     router.refresh();
   }
+
+  const exhibitionPath = exhibition?.slug ?? exhibition?.id ?? exhibitionSlugOrId;
+  const roomPath = room?.slug ?? room?.id ?? roomSlugOrId;
 
   return (
     <div className="mx-auto max-w-4xl">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-xl font-bold">포스트 목록</h1>
         <Link
-          href={`/admin/exhibitions/${exhibitionId}/rooms/${roomId}/posts/new`}
+          href={`/admin/exhibitions/${exhibitionPath}/rooms/${roomPath}/posts/new`}
           className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800"
         >
           새 포스트
@@ -86,7 +118,7 @@ export default function RoomPostsListPage() {
               className="flex items-center justify-between gap-4 rounded-lg border border-neutral-200 bg-white p-4"
             >
               <Link
-                href={`/admin/exhibitions/${exhibitionId}/rooms/${roomId}/posts/${post.id}`}
+                href={`/admin/exhibitions/${exhibitionPath}/rooms/${roomPath}/posts/${post.id}`}
                 className="min-w-0 flex-1 hover:opacity-80"
               >
                 <p className="font-medium text-neutral-900 truncate">{post.title || "(제목 없음)"}</p>
@@ -94,7 +126,7 @@ export default function RoomPostsListPage() {
               </Link>
               <div className="flex shrink-0 items-center gap-2">
                 <Link
-                  href={`/admin/exhibitions/${exhibitionId}/rooms/${roomId}/posts/${post.id}`}
+                  href={`/admin/exhibitions/${exhibitionPath}/rooms/${roomPath}/posts/${post.id}`}
                   className="rounded-md border border-neutral-300 px-3 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
                 >
                   수정
@@ -115,7 +147,7 @@ export default function RoomPostsListPage() {
 
       <div className="mt-6">
         <Link
-          href={`/admin/exhibitions/${exhibitionId}/rooms/${roomId}`}
+          href={`/admin/exhibitions/${exhibitionPath}/rooms/${roomPath}`}
           className="text-sm text-neutral-600 underline hover:text-neutral-900"
         >
           ← 전시실 상세

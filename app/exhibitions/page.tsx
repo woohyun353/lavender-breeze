@@ -37,7 +37,7 @@ export default async function ExhibitionsPage() {
               return (
                 <Link
                   key={ex.id}
-                  href={`/exhibitions/${ex.id}`}
+                  href={`/exhibitions/${ex.slug ?? ex.id}`}
                   className="group block"
                 >
                   <div className="mx-auto w-full max-w-[320px]">

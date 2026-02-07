@@ -17,6 +17,7 @@ export default function ExhibitionDetailPage() {
 
   const [exhibition, setExhibition] = useState<Exhibition | null>(null);
   const [title, setTitle] = useState("");
+  const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
   const [order, setOrder] = useState<number>(0);
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -37,8 +38,8 @@ export default function ExhibitionDetailPage() {
     supabaseClient
       .from("exhibitions")
       .select("*")
-      .eq("id", exhibitionId)
-      .single()
+      .or(`slug.eq.${exhibitionId},id.eq.${exhibitionId}`)
+      .maybeSingle()
       .then(({ data, error }) => {
         if (error || !data) {
           setError("전시를 불러올 수 없습니다.");
@@ -50,6 +51,7 @@ export default function ExhibitionDetailPage() {
         setTitle(ex.title ?? "");
         setDescription(ex.description ?? "");
         setOrder(ex.order ?? 0);
+        setSlug(ex.slug ?? "");
         setLoading(false);
       });
   }, [exhibitionId]);
@@ -85,11 +87,12 @@ export default function ExhibitionDetailPage() {
         .from("exhibitions")
         .update({
           title: title.trim(),
+          slug: slug.trim() || null,
           description: description.trim() || null,
           cover_image: coverImageUrl,
           order: order,
         })
-        .eq("id", exhibitionId);
+        .eq("id", exhibition.id);
 
       if (updateError) {
         setError("저장 실패: " + updateError.message);
@@ -137,7 +140,7 @@ export default function ExhibitionDetailPage() {
 
       <div className="mb-8 rounded-lg border border-neutral-200 bg-white p-4">
         <Link
-          href={`/admin/exhibitions/${exhibitionId}/rooms`}
+          href={`/admin/exhibitions/${exhibition.slug ?? exhibition.id}/rooms`}
           className="flex items-center justify-between rounded-md px-3 py-3 text-neutral-700 hover:bg-neutral-50"
         >
           <span className="font-medium">전시실 관리로 이동</span>
@@ -161,6 +164,19 @@ export default function ExhibitionDetailPage() {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
+              className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
+            />
+          </div>
+          <div>
+            <label htmlFor="slug" className="mb-1 block text-sm font-medium text-neutral-700">
+              URL 경로 (영문·숫자·하이픈, 예: spring-2024)
+            </label>
+            <input
+              id="slug"
+              type="text"
+              value={slug}
+              onChange={(e) => setSlug(e.target.value)}
+              placeholder="비우면 UUID 사용"
               className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
             />
           </div>

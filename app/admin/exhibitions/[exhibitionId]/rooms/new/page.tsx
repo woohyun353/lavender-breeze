@@ -1,9 +1,10 @@
 "use client";
 
 import { supabaseClient } from "@/lib/supabase/client";
+import type { Exhibition } from "@/types/exhibition";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const STORAGE_BUCKET = "artworks";
 const STORAGE_PREFIX_ROOMS = "rooms";
@@ -11,9 +12,11 @@ const STORAGE_PREFIX_ROOMS = "rooms";
 export default function NewRoomPage() {
   const params = useParams();
   const router = useRouter();
-  const exhibitionId = params.exhibitionId as string;
+  const exhibitionSlugOrId = params.exhibitionId as string;
 
+  const [exhibition, setExhibition] = useState<Exhibition | null>(null);
   const [title, setTitle] = useState("");
+  const [slug, setSlug] = useState("");
   const [subtitle, setSubtitle] = useState("");
   const [description, setDescription] = useState("");
   const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
@@ -22,8 +25,23 @@ export default function NewRoomPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  useEffect(() => {
+    void supabaseClient
+      .from("exhibitions")
+      .select("*")
+      .or(`slug.eq.${exhibitionSlugOrId},id.eq.${exhibitionSlugOrId}`)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) setExhibition(data as Exhibition);
+      });
+  }, [exhibitionSlugOrId]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!exhibition) {
+      setError("전시를 찾을 수 없습니다.");
+      return;
+    }
     setError(null);
     setSubmitting(true);
 
@@ -51,7 +69,7 @@ export default function NewRoomPage() {
       const { data: maxOrder } = await supabaseClient
         .from("rooms")
         .select("order")
-        .eq("exhibition_id", exhibitionId)
+        .eq("exhibition_id", exhibition.id)
         .order("order", { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -59,9 +77,11 @@ export default function NewRoomPage() {
       const nextOrder = (maxOrder?.order ?? -1) + 1;
       const finalOrder = order !== 0 ? order : nextOrder;
 
+      const slugValue = slug.trim() || null;
       const { error: insertError } = await supabaseClient.from("rooms").insert({
-        exhibition_id: exhibitionId,
+        exhibition_id: exhibition.id,
         title: title.trim(),
+        slug: slugValue,
         subtitle: subtitle.trim() || null,
         description: description.trim() || null,
         cover_image_url: coverImageUrl,
@@ -75,7 +95,7 @@ export default function NewRoomPage() {
         return;
       }
 
-      router.push(`/admin/exhibitions/${exhibitionId}/rooms`);
+      router.push(`/admin/exhibitions/${exhibition.slug ?? exhibition.id}/rooms`);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "오류가 발생했습니다.");
@@ -88,7 +108,7 @@ export default function NewRoomPage() {
     <div className="mx-auto max-w-xl">
       <div className="mb-6">
         <Link
-          href={`/admin/exhibitions/${exhibitionId}/rooms`}
+          href={`/admin/exhibitions/${exhibition?.slug ?? exhibition?.id ?? exhibitionSlugOrId}/rooms`}
           className="text-sm text-neutral-600 underline hover:text-neutral-900"
         >
           ← 전시실 목록
@@ -96,6 +116,7 @@ export default function NewRoomPage() {
       </div>
       <h1 className="mb-6 text-2xl font-bold">전시실 추가</h1>
 
+      {!exhibition && <p className="text-sm text-neutral-500">전시 정보를 불러오는 중…</p>}
       <form
         onSubmit={handleSubmit}
         className="space-y-4 rounded-lg border border-neutral-200 bg-white p-6"
@@ -110,7 +131,22 @@ export default function NewRoomPage() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             required
-            className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
+            disabled={!exhibition}
+            className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 disabled:opacity-60"
+          />
+        </div>
+        <div>
+          <label htmlFor="slug" className="mb-1 block text-sm font-medium text-neutral-700">
+            URL 경로 (영문·숫자·하이픈, 예: room-1)
+          </label>
+          <input
+            id="slug"
+            type="text"
+            value={slug}
+            onChange={(e) => setSlug(e.target.value)}
+            placeholder="비우면 자동 생성"
+            disabled={!exhibition}
+            className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 disabled:opacity-60"
           />
         </div>
         <div>
@@ -187,7 +223,7 @@ export default function NewRoomPage() {
             {submitting ? "저장 중…" : "저장"}
           </button>
           <Link
-            href={`/admin/exhibitions/${exhibitionId}/rooms`}
+            href={`/admin/exhibitions/${exhibition?.slug ?? exhibition?.id ?? exhibitionSlugOrId}/rooms`}
             className="rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
           >
             취소

@@ -6,15 +6,36 @@ import type { Room } from "@/types/room";
 type Props = { params: Promise<{ id: string }> };
 
 export default async function ExhibitionFirstRoomPage({ params }: Props) {
-  const { id: exhibitionId } = await params;
+  const { id: exhibitionSlugOrId } = await params;
   const supabase = supabaseServerClient();
+
+  const { data: ex } = await supabase
+    .from("exhibitions")
+    .select("id")
+    .or(`slug.eq.${exhibitionSlugOrId},id.eq.${exhibitionSlugOrId}`)
+    .maybeSingle();
+  if (!ex) {
+    return (
+      <main className="min-h-screen bg-background">
+        <div className="mx-auto max-w-6xl px-6 py-16 text-center">
+          <p className="text-body/70">전시를 찾을 수 없습니다.</p>
+          <Link
+            href="/exhibitions"
+            className="mt-4 inline-block text-sm text-body/80 underline hover:text-body"
+          >
+            ← 전시 목록
+          </Link>
+        </div>
+      </main>
+    );
+  }
 
   const { data: rows } = await supabase
     .from("rooms")
-    .select("id")
-    .eq("exhibition_id", exhibitionId)
+    .select("id, slug")
+    .eq("exhibition_id", ex.id)
     .order("order", { ascending: true, nullsFirst: false });
-  const rooms = (rows as { id: string }[]) ?? [];
+  const rooms = (rows as { id: string; slug?: string | null }[]) ?? [];
 
   if (rooms.length === 0) {
     return (
@@ -32,5 +53,5 @@ export default async function ExhibitionFirstRoomPage({ params }: Props) {
     );
   }
 
-  redirect(`/rooms/${rooms[0].id}`);
+  redirect(`/rooms/${rooms[0].slug ?? rooms[0].id}`);
 }

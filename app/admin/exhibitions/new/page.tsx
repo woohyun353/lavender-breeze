@@ -11,6 +11,7 @@ const STORAGE_PREFIX = "exhibitions";
 export default function NewExhibitionPage() {
   const router = useRouter();
   const [title, setTitle] = useState("");
+  const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -51,8 +52,10 @@ export default function NewExhibitionPage() {
 
       const nextOrder = (existing?.order ?? -1) + 1;
 
+      const slugValue = slug.trim() || null;
       const { error: insertError } = await supabaseClient.from("exhibitions").insert({
         title: title.trim(),
+        slug: slugValue,
         description: description.trim() || null,
         cover_image: imageUrl,
         order: nextOrder,
@@ -96,6 +99,19 @@ export default function NewExhibitionPage() {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
+              className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
+            />
+          </div>
+          <div>
+            <label htmlFor="slug" className="mb-1 block text-sm font-medium text-neutral-700">
+              URL 경로 (영문·숫자·하이픈, 예: spring-2024)
+            </label>
+            <input
+              id="slug"
+              type="text"
+              value={slug}
+              onChange={(e) => setSlug(e.target.value)}
+              placeholder="비우면 자동 생성"
               className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
             />
           </div>

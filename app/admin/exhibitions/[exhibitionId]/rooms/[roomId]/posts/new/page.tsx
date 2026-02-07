@@ -1,9 +1,11 @@
 "use client";
 
 import { supabaseClient } from "@/lib/supabase/client";
+import type { Exhibition } from "@/types/exhibition";
+import type { Room } from "@/types/room";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const STORAGE_BUCKET = "artworks";
 const STORAGE_PREFIX_POSTS = "posts";
@@ -11,9 +13,11 @@ const STORAGE_PREFIX_POSTS = "posts";
 export default function NewPostPage() {
   const params = useParams();
   const router = useRouter();
-  const exhibitionId = params.exhibitionId as string;
-  const roomId = params.roomId as string;
+  const exhibitionSlugOrId = params.exhibitionId as string;
+  const roomSlugOrId = params.roomId as string;
 
+  const [exhibition, setExhibition] = useState<Exhibition | null>(null);
+  const [room, setRoom] = useState<Room | null>(null);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
@@ -21,8 +25,36 @@ export default function NewPostPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  useEffect(() => {
+    void supabaseClient
+      .from("exhibitions")
+      .select("*")
+      .or(`slug.eq.${exhibitionSlugOrId},id.eq.${exhibitionSlugOrId}`)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) setExhibition(data as Exhibition);
+      });
+  }, [exhibitionSlugOrId]);
+
+  useEffect(() => {
+    if (!exhibition) return;
+    void supabaseClient
+      .from("rooms")
+      .select("*")
+      .eq("exhibition_id", exhibition.id)
+      .or(`slug.eq.${roomSlugOrId},id.eq.${roomSlugOrId}`)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) setRoom(data as Room);
+      });
+  }, [exhibition?.id, roomSlugOrId]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!room) {
+      setError("전시실을 찾을 수 없습니다.");
+      return;
+    }
     setError(null);
     setSubmitting(true);
 
@@ -50,7 +82,7 @@ export default function NewPostPage() {
       const { data: maxOrder } = await supabaseClient
         .from("posts")
         .select("order")
-        .eq("room_id", roomId)
+        .eq("room_id", room.id)
         .order("order", { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -59,7 +91,7 @@ export default function NewPostPage() {
       const finalOrder = order !== 0 ? order : nextOrder;
 
       const { error: insertError } = await supabaseClient.from("posts").insert({
-        room_id: roomId,
+        room_id: room.id,
         title: title.trim(),
         content: content.trim() || null,
         thumbnail: thumbnailUrl,
@@ -72,7 +104,7 @@ export default function NewPostPage() {
         return;
       }
 
-      router.push(`/admin/exhibitions/${exhibitionId}/rooms/${roomId}/posts`);
+      router.push(`/admin/exhibitions/${exhibition.slug ?? exhibition.id}/rooms/${room.slug ?? room.id}/posts`);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "오류가 발생했습니다.");
@@ -85,7 +117,7 @@ export default function NewPostPage() {
     <div className="mx-auto max-w-xl">
       <div className="mb-6">
         <Link
-          href={`/admin/exhibitions/${exhibitionId}/rooms/${roomId}/posts`}
+          href={`/admin/exhibitions/${exhibition?.slug ?? exhibition?.id ?? exhibitionSlugOrId}/rooms/${room?.slug ?? room?.id ?? roomSlugOrId}/posts`}
           className="text-sm text-neutral-600 underline hover:text-neutral-900"
         >
           ← 포스트 목록
@@ -157,7 +189,7 @@ export default function NewPostPage() {
             {submitting ? "저장 중…" : "저장"}
           </button>
           <Link
-            href={`/admin/exhibitions/${exhibitionId}/rooms/${roomId}/posts`}
+            href={`/admin/exhibitions/${exhibition?.slug ?? exhibition?.id ?? exhibitionSlugOrId}/rooms/${room?.slug ?? room?.id ?? roomSlugOrId}/posts`}
             className="rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
           >
             취소

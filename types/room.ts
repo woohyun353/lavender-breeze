@@ -1,5 +1,7 @@
 export type Room = {
   id: string;
+  /** URL용 고유 문자열 (지정 가능). 없으면 id 사용 */
+  slug?: string | null;
   title: string;
   subtitle?: string | null;
   description?: string | null;

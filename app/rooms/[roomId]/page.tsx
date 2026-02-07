@@ -86,9 +86,9 @@ export default async function RoomPage({ params }: Props) {
 
   const { data: roomRow, error: roomError } = await supabase
     .from("rooms")
-    .select("id, title, subtitle, description, exhibition_id, type, order")
-    .eq("id", roomId)
-    .single();
+    .select("id, slug, title, subtitle, description, exhibition_id, type, order")
+    .or(`slug.eq.${roomId},id.eq.${roomId}`)
+    .maybeSingle();
 
   if (roomError || !roomRow) {
     const fallback = DUMMY_FALLBACK[roomId];
@@ -115,14 +115,14 @@ export default async function RoomPage({ params }: Props) {
     notFound();
   }
 
-  const room = roomRow as Pick<Room, "id" | "title" | "subtitle" | "description" | "exhibition_id" | "type" | "order">;
+  const room = roomRow as Pick<Room, "id" | "slug" | "title" | "subtitle" | "description" | "exhibition_id" | "type" | "order">;
 
   const { data: siblingRows } = await supabase
     .from("rooms")
-    .select("id, title, order")
+    .select("id, slug, title, order")
     .eq("exhibition_id", room.exhibition_id)
     .order("order", { ascending: true, nullsFirst: false });
-  const siblingRooms = (siblingRows as { id: string; title: string; order: number | null }[]) ?? [];
+  const siblingRooms = (siblingRows as { id: string; slug?: string | null; title: string; order: number | null }[]) ?? [];
 
   let items: GalleryItem[] = [];
   let posts: Post[] = [];
@@ -131,7 +131,7 @@ export default async function RoomPage({ params }: Props) {
     const { data: galleryRows } = await supabase
       .from("gallery_items")
       .select("id, image_url, caption, description")
-      .eq("room_id", roomId)
+      .eq("room_id", room.id)
       .order("order", { ascending: true, nullsFirst: false });
     const rows = (galleryRows as { id: string; image_url: string | null; caption: string | null; description?: string | null }[]) ?? [];
     items = rows.map((r) => ({
@@ -148,7 +148,7 @@ export default async function RoomPage({ params }: Props) {
     const { data: postRows } = await supabase
       .from("posts")
       .select("id, room_id, title, content, thumbnail, order")
-      .eq("room_id", roomId)
+      .eq("room_id", room.id)
       .order("order", { ascending: true, nullsFirst: false });
     posts = (postRows as Post[]) ?? [];
   }
@@ -166,7 +166,7 @@ export default async function RoomPage({ params }: Props) {
             ← 전시 목록
           </Link>
           <h1 className="text-base font-medium text-body">{room.title}</h1>
-          <RoomSwitcher rooms={siblingRooms} currentRoomId={roomId} />
+          <RoomSwitcher rooms={siblingRooms} currentRoomSlugOrId={room.slug ?? room.id} />
         </div>
       </header>
       <div className="mx-auto max-w-6xl px-6 sm:px-10">

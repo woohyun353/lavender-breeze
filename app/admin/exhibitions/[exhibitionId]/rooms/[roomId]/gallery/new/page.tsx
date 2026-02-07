@@ -54,7 +54,7 @@ export default function NewGalleryItemPage() {
       const { data: maxOrder } = await supabaseClient
         .from("gallery_items")
         .select("order")
-        .eq("room_id", roomId)
+        .eq("room_id", room.id)
         .order("order", { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -63,7 +63,7 @@ export default function NewGalleryItemPage() {
       const finalOrder = order !== 0 ? order : nextOrder;
 
       const { error: insertError } = await supabaseClient.from("gallery_items").insert({
-        room_id: roomId,
+        room_id: room.id,
         image_url: imageUrl,
         caption: caption.trim() || null,
         description: description.trim() || null,

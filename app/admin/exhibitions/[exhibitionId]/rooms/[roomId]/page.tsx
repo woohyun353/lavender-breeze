@@ -2,6 +2,7 @@
 
 import { supabaseClient } from "@/lib/supabase/client";
 import type { Room } from "@/types/room";
+import type { Exhibition } from "@/types/exhibition";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -13,11 +14,13 @@ const STORAGE_PREFIX_ROOMS = "rooms";
 export default function RoomDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const exhibitionId = params.exhibitionId as string;
-  const roomId = params.roomId as string;
+  const exhibitionSlugOrId = params.exhibitionId as string;
+  const roomSlugOrId = params.roomId as string;
 
+  const [exhibition, setExhibition] = useState<Exhibition | null>(null);
   const [room, setRoom] = useState<Room | null>(null);
   const [title, setTitle] = useState("");
+  const [slug, setSlug] = useState("");
   const [subtitle, setSubtitle] = useState("");
   const [description, setDescription] = useState("");
   const [order, setOrder] = useState(0);
@@ -37,13 +40,26 @@ export default function RoomDetailPage() {
   }, [router]);
 
   useEffect(() => {
+    void supabaseClient
+      .from("exhibitions")
+      .select("*")
+      .or(`slug.eq.${exhibitionSlugOrId},id.eq.${exhibitionSlugOrId}`)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) setExhibition(data as Exhibition);
+      });
+  }, [exhibitionSlugOrId]);
+
+  useEffect(() => {
+    if (!exhibition) return;
     supabaseClient
       .from("rooms")
       .select("*")
-      .eq("id", roomId)
-      .single()
-      .then(({ data, error }) => {
-        if (error || !data) {
+      .eq("exhibition_id", exhibition.id)
+      .or(`slug.eq.${roomSlugOrId},id.eq.${roomSlugOrId}`)
+      .maybeSingle()
+      .then(({ data, error: err }) => {
+        if (err || !data) {
           setError("전시실을 불러올 수 없습니다.");
           setLoading(false);
           return;
@@ -51,13 +67,14 @@ export default function RoomDetailPage() {
         const r = data as Room;
         setRoom(r);
         setTitle(r.title ?? "");
+        setSlug(r.slug ?? "");
         setSubtitle(r.subtitle ?? "");
         setDescription(r.description ?? "");
         setOrder(r.order ?? 0);
         setType((r.type as "text" | "image") ?? "text");
         setLoading(false);
       });
-  }, [roomId]);
+  }, [exhibition?.id, roomSlugOrId]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -90,13 +107,14 @@ export default function RoomDetailPage() {
         .from("rooms")
         .update({
           title: title.trim(),
+          slug: slug.trim() || null,
           subtitle: subtitle.trim() || null,
           description: description.trim() || null,
           cover_image_url: coverImageUrl,
           order: order,
           type: type || null,
         })
-        .eq("id", roomId);
+        .eq("id", room.id);
 
       if (updateError) {
         setError("저장 실패: " + updateError.message);
@@ -125,7 +143,7 @@ export default function RoomDetailPage() {
       <div className="mx-auto max-w-xl">
         <p className="text-red-600">{error}</p>
         <Link
-          href={`/admin/exhibitions/${exhibitionId}/rooms`}
+          href={`/admin/exhibitions/${exhibition?.slug ?? exhibition?.id ?? exhibitionSlugOrId}/rooms`}
           className="mt-4 inline-block text-sm underline"
         >
           전시실 목록으로
@@ -138,7 +156,7 @@ export default function RoomDetailPage() {
     <div className="mx-auto max-w-2xl">
       <div className="mb-6">
         <Link
-          href={`/admin/exhibitions/${exhibitionId}/rooms`}
+          href={`/admin/exhibitions/${exhibition?.slug ?? exhibition?.id ?? exhibitionSlugOrId}/rooms`}
           className="text-sm text-neutral-600 underline hover:text-neutral-900"
         >
           ← 전시실 목록
@@ -147,14 +165,14 @@ export default function RoomDetailPage() {
 
       <div className="mb-8 grid gap-4 sm:grid-cols-2">
         <Link
-          href={`/admin/exhibitions/${exhibitionId}/rooms/${roomId}/posts`}
+          href={`/admin/exhibitions/${exhibition?.slug ?? exhibition?.id ?? exhibitionSlugOrId}/rooms/${room.slug ?? room.id}/posts`}
           className="flex items-center justify-between rounded-lg border border-neutral-200 bg-white p-4 hover:bg-neutral-50"
         >
           <span className="font-medium">포스트 관리</span>
           <span className="text-neutral-400">→</span>
         </Link>
         <Link
-          href={`/admin/exhibitions/${exhibitionId}/rooms/${roomId}/gallery`}
+          href={`/admin/exhibitions/${exhibition?.slug ?? exhibition?.id ?? exhibitionSlugOrId}/rooms/${room.slug ?? room.id}/gallery`}
           className="flex items-center justify-between rounded-lg border border-neutral-200 bg-white p-4 hover:bg-neutral-50"
         >
           <span className="font-medium">갤러리 관리</span>
@@ -175,6 +193,19 @@ export default function RoomDetailPage() {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
+              className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
+            />
+          </div>
+          <div>
+            <label htmlFor="slug" className="mb-1 block text-sm font-medium text-neutral-700">
+              URL 경로 (영문·숫자·하이픈, 예: room-1)
+            </label>
+            <input
+              id="slug"
+              type="text"
+              value={slug}
+              onChange={(e) => setSlug(e.target.value)}
+              placeholder="비우면 UUID 사용"
               className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
             />
           </div>
@@ -266,7 +297,7 @@ export default function RoomDetailPage() {
               {submitting ? "저장 중…" : "저장"}
             </button>
             <Link
-              href={`/admin/exhibitions/${exhibitionId}/rooms`}
+              href={`/admin/exhibitions/${exhibition?.slug ?? exhibition?.id ?? exhibitionSlugOrId}/rooms`}
               className="rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
             >
               취소

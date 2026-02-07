@@ -82,7 +82,7 @@ export default function ExhibitionsListPage() {
               className="flex items-center justify-between gap-4 rounded-lg border border-neutral-200 bg-white p-4"
             >
               <Link
-                href={`/admin/exhibitions/${ex.id}`}
+                href={`/admin/exhibitions/${ex.slug ?? ex.id}`}
                 className="flex min-w-0 flex-1 items-center gap-4 hover:opacity-80"
               >
                 {ex.cover_image ? (
@@ -105,7 +105,7 @@ export default function ExhibitionsListPage() {
               </Link>
               <div className="flex shrink-0 items-center gap-2">
                 <Link
-                  href={`/admin/exhibitions/${ex.id}`}
+                  href={`/admin/exhibitions/${ex.slug ?? ex.id}`}
                   className="rounded-md border border-neutral-300 px-3 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
                 >
                   상세

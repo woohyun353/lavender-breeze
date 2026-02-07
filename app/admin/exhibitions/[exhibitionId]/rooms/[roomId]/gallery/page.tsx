@@ -2,6 +2,8 @@
 
 import { supabaseClient } from "@/lib/supabase/client";
 import type { GalleryItem } from "@/types/gallery-item";
+import type { Room } from "@/types/room";
+import type { Exhibition } from "@/types/exhibition";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -10,14 +12,16 @@ import { useEffect, useState } from "react";
 export default function RoomGalleryListPage() {
   const params = useParams();
   const router = useRouter();
-  const exhibitionId = params.exhibitionId as string;
-  const roomId = params.roomId as string;
+  const exhibitionSlugOrId = params.exhibitionId as string;
+  const roomSlugOrId = params.roomId as string;
 
+  const [exhibition, setExhibition] = useState<Exhibition | null>(null);
+  const [room, setRoom] = useState<Room | null>(null);
   const [items, setItems] = useState<GalleryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  function fetchItems() {
+  function fetchItems(roomId: string) {
     setLoading(true);
     void supabaseClient
       .from("gallery_items")
@@ -45,8 +49,33 @@ export default function RoomGalleryListPage() {
   }, [router]);
 
   useEffect(() => {
-    fetchItems();
-  }, [roomId]);
+    void supabaseClient
+      .from("exhibitions")
+      .select("*")
+      .or(`slug.eq.${exhibitionSlugOrId},id.eq.${exhibitionSlugOrId}`)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) setExhibition(data as Exhibition);
+      });
+  }, [exhibitionSlugOrId]);
+
+  useEffect(() => {
+    if (!exhibition) return;
+    void supabaseClient
+      .from("rooms")
+      .select("*")
+      .eq("exhibition_id", exhibition.id)
+      .or(`slug.eq.${roomSlugOrId},id.eq.${roomSlugOrId}`)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) {
+          setRoom(data as Room);
+          fetchItems((data as Room).id);
+        } else {
+          setLoading(false);
+        }
+      });
+  }, [exhibition?.id, roomSlugOrId]);
 
   async function handleDelete(itemId: string) {
     if (!confirm("이 갤러리 항목을 삭제할까요?")) return;
@@ -57,16 +86,19 @@ export default function RoomGalleryListPage() {
       console.error(error);
       return;
     }
-    fetchItems();
+    if (room) fetchItems(room.id);
     router.refresh();
   }
+
+  const exhibitionPath = exhibition?.slug ?? exhibition?.id ?? exhibitionSlugOrId;
+  const roomPath = room?.slug ?? room?.id ?? roomSlugOrId;
 
   return (
     <div className="mx-auto max-w-4xl">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-xl font-bold">갤러리 목록</h1>
         <Link
-          href={`/admin/exhibitions/${exhibitionId}/rooms/${roomId}/gallery/new`}
+          href={`/admin/exhibitions/${exhibitionPath}/rooms/${roomPath}/gallery/new`}
           className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800"
         >
           새 항목
@@ -87,7 +119,7 @@ export default function RoomGalleryListPage() {
               className="flex flex-col overflow-hidden rounded-lg border border-neutral-200 bg-white"
             >
               <Link
-                href={`/admin/exhibitions/${exhibitionId}/rooms/${roomId}/gallery/${item.id}`}
+                href={`/admin/exhibitions/${exhibitionPath}/rooms/${roomPath}/gallery/${item.id}`}
                 className="block hover:opacity-90"
               >
                 {item.image_url ? (
@@ -112,7 +144,7 @@ export default function RoomGalleryListPage() {
               </Link>
               <div className="flex gap-2 border-t border-neutral-100 p-3">
                 <Link
-                  href={`/admin/exhibitions/${exhibitionId}/rooms/${roomId}/gallery/${item.id}`}
+                  href={`/admin/exhibitions/${exhibitionPath}/rooms/${roomPath}/gallery/${item.id}`}
                   className="flex-1 rounded-md border border-neutral-300 py-1.5 text-center text-sm font-medium text-neutral-700 hover:bg-neutral-50"
                 >
                   수정
@@ -133,7 +165,7 @@ export default function RoomGalleryListPage() {
 
       <div className="mt-6">
         <Link
-          href={`/admin/exhibitions/${exhibitionId}/rooms/${roomId}`}
+          href={`/admin/exhibitions/${exhibitionPath}/rooms/${roomPath}`}
           className="text-sm text-neutral-600 underline hover:text-neutral-900"
         >
           ← 전시실 상세

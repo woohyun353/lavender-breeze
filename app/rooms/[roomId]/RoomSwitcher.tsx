@@ -3,14 +3,14 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 
-type Room = { id: string; title: string; order?: number | null };
+type Room = { id: string; slug?: string | null; title: string; order?: number | null };
 
 type Props = {
   rooms: Room[];
-  currentRoomId: string;
+  currentRoomSlugOrId: string;
 };
 
-export function RoomSwitcher({ rooms, currentRoomId }: Props) {
+export function RoomSwitcher({ rooms, currentRoomSlugOrId }: Props) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -37,13 +37,15 @@ export function RoomSwitcher({ rooms, currentRoomId }: Props) {
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, [isOpen, close]);
 
-  const handleItemClick = (id: string) => {
-    if (id === currentRoomId) {
+  const roomSlugOrId = (r: Room) => r.slug ?? r.id;
+  const handleItemClick = (r: Room) => {
+    const slugOrId = roomSlugOrId(r);
+    if (slugOrId === currentRoomSlugOrId || r.id === currentRoomSlugOrId) {
       close();
       return;
     }
     close();
-    router.push(`/rooms/${id}`);
+    router.push(`/rooms/${slugOrId}`);
   };
 
   return (
@@ -71,12 +73,12 @@ export function RoomSwitcher({ rooms, currentRoomId }: Props) {
         >
           <ul className="flex flex-col py-2">
             {rooms.map((room) => {
-              const isCurrent = room.id === currentRoomId;
+              const isCurrent = (room.slug ?? room.id) === currentRoomSlugOrId || room.id === currentRoomSlugOrId;
               return (
                 <li key={room.id}>
                   <button
                     type="button"
-                    onClick={() => handleItemClick(room.id)}
+                    onClick={() => handleItemClick(room)}
                     className={`w-full px-6 py-3 text-center text-xs font-semibold text-white transition hover:bg-zinc-700 focus:outline-none focus:bg-zinc-700 ${
                       isCurrent
                         ? "bg-zinc-700/80 underline"

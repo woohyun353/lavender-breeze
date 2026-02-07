@@ -22,19 +22,19 @@ export default function ExhibitionRoomsListPage() {
     void supabaseClient
       .from("exhibitions")
       .select("*")
-      .eq("id", exhibitionId)
-      .single()
+      .or(`slug.eq.${exhibitionId},id.eq.${exhibitionId}`)
+      .maybeSingle()
       .then(({ data, error }) => {
         if (!error && data) setExhibition(data as Exhibition);
       });
   }
 
-  function fetchRooms() {
+  function fetchRooms(exhibitionIdFromEx: string) {
     setLoading(true);
     void supabaseClient
       .from("rooms")
       .select("*")
-      .eq("exhibition_id", exhibitionId)
+      .eq("exhibition_id", exhibitionIdFromEx)
       .order("order", { ascending: true })
       .then(({ data, error }) => {
         if (error) {
@@ -58,8 +58,12 @@ export default function ExhibitionRoomsListPage() {
 
   useEffect(() => {
     fetchExhibition();
-    fetchRooms();
   }, [exhibitionId]);
+
+  useEffect(() => {
+    if (!exhibition) return;
+    fetchRooms(exhibition.id);
+  }, [exhibition?.id]);
 
   async function handleDelete(roomId: string) {
     if (!confirm("이 전시실을 삭제할까요? 하위 포스트·갤러리는 별도 확인이 필요할 수 있습니다."))
@@ -71,7 +75,7 @@ export default function ExhibitionRoomsListPage() {
       console.error(error);
       return;
     }
-    fetchRooms();
+    if (exhibition) fetchRooms(exhibition.id);
     router.refresh();
   }
 
@@ -82,7 +86,7 @@ export default function ExhibitionRoomsListPage() {
           전시실 목록 {exhibition?.title ? `— ${exhibition.title}` : ""}
         </h1>
         <Link
-          href={`/admin/exhibitions/${exhibitionId}/rooms/new`}
+          href={`/admin/exhibitions/${exhibition?.slug ?? exhibition?.id ?? exhibitionId}/rooms/new`}
           className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800"
         >
           새 전시실
@@ -103,7 +107,7 @@ export default function ExhibitionRoomsListPage() {
               className="flex items-center justify-between gap-4 rounded-lg border border-neutral-200 bg-white p-4"
             >
               <Link
-                href={`/admin/exhibitions/${exhibitionId}/rooms/${room.id}`}
+                href={`/admin/exhibitions/${exhibition?.slug ?? exhibition?.id ?? exhibitionId}/rooms/${room.slug ?? room.id}`}
                 className="flex min-w-0 flex-1 items-center gap-4 hover:opacity-80"
               >
                 {room.cover_image_url ? (
@@ -126,7 +130,7 @@ export default function ExhibitionRoomsListPage() {
               </Link>
               <div className="flex shrink-0 items-center gap-2">
                 <Link
-                  href={`/admin/exhibitions/${exhibitionId}/rooms/${room.id}`}
+                  href={`/admin/exhibitions/${exhibition?.slug ?? exhibition?.id ?? exhibitionId}/rooms/${room.slug ?? room.id}`}
                   className="rounded-md border border-neutral-300 px-3 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
                 >
                   상세
