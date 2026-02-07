@@ -41,7 +41,7 @@ export default async function PostPage({ params }: Props) {
             {post.title || "(제목 없음)"}
           </h1>
           <hr className="mt-6 h-px w-full border-0 bg-black/70" />
-          <div className="mt-8 whitespace-pre-wrap text-base leading-relaxed text-body">
+          <div className="mt-8 whitespace-pre-wrap text-sm leading-relaxed text-body">
             {post.content ?? ""}
           </div>
         </div>

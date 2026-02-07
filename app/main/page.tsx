@@ -53,7 +53,7 @@ export default async function MainPage() {
 
         {/* 오른쪽: 오프닝 글 (아치와 겹치지 않게, 가로 줄이고 오른쪽으로) */}
         <div className="flex flex-col justify-center overflow-visible px-8 py-12 lg:pl-[140px] lg:pr-12 lg:py-16">
-          <p className="ml-auto max-w-md whitespace-pre-line text-base leading-relaxed text-body/90">
+          <p className="ml-auto max-w-md whitespace-pre-line font-serif text-sm leading-relaxed text-body/90">
             {openingText}
           </p>
         </div>
