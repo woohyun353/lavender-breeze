@@ -3,6 +3,8 @@ import Image from "next/image";
 import { supabaseServerClient } from "@/lib/supabase/server";
 import type { MainPage } from "@/types/main-page";
 
+export const dynamic = "force-dynamic";
+
 const DEFAULT_OPENING_TEXT = `갤러리를 방문해 주셔서 감사합니다.
 이곳에서는 다양한 전시와 작품을 만나보실 수 있습니다.`;
 
