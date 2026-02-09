@@ -45,11 +45,24 @@ function InfoPanel({
   );
 }
 
+const ROWS_PER_PAGE = 4;
+const COLS_LG = 3;
+const ITEMS_PER_PAGE = ROWS_PER_PAGE * COLS_LG;
+
 export function RoomGallery({ roomTitle, items }: Props) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const selected = items.find((i) => i.id === selectedId);
 
+  const totalPages = Math.max(1, Math.ceil(items.length / ITEMS_PER_PAGE));
+  const start = (currentPage - 1) * ITEMS_PER_PAGE;
+  const pageItems = items.slice(start, start + ITEMS_PER_PAGE);
+
   const close = useCallback(() => setSelectedId(null), []);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [items.length]);
 
   useEffect(() => {
     if (!selected) return;
@@ -72,7 +85,7 @@ export function RoomGallery({ roomTitle, items }: Props) {
   return (
     <>
       <ul className="mx-auto grid max-w-6xl grid-cols-1 justify-items-center gap-x-20 gap-y-16 py-12 sm:grid-cols-2 lg:grid-cols-3">
-        {items.map((item) => (
+        {pageItems.map((item) => (
           <li key={item.id} className="w-full max-w-sm">
             <button
               type="button"
@@ -98,6 +111,51 @@ export function RoomGallery({ roomTitle, items }: Props) {
           </li>
         ))}
       </ul>
+
+      {/* 페이지네이션: 4줄(12개) 단위, 미니멀 */}
+      {totalPages > 1 && (
+        <nav
+          className="mx-auto flex max-w-6xl items-center justify-center gap-3 py-8"
+          aria-label="갤러리 페이지"
+        >
+          <button
+            type="button"
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            disabled={currentPage <= 1}
+            className="rounded p-1.5 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600 disabled:pointer-events-none disabled:opacity-30"
+            aria-label="이전 페이지"
+          >
+            <span className="text-lg leading-none">‹</span>
+          </button>
+          <div className="flex items-center gap-1">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+              <button
+                key={p}
+                type="button"
+                onClick={() => setCurrentPage(p)}
+                className={`min-w-[1.75rem] rounded px-1.5 py-1 text-xs leading-none transition-colors ${
+                  currentPage === p
+                    ? "bg-neutral-200 text-body font-medium"
+                    : "text-neutral-500 hover:bg-neutral-100 hover:text-body"
+                }`}
+                aria-label={`${p}페이지`}
+                aria-current={currentPage === p ? "page" : undefined}
+              >
+                {p}
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            disabled={currentPage >= totalPages}
+            className="rounded p-1.5 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600 disabled:pointer-events-none disabled:opacity-30"
+            aria-label="다음 페이지"
+          >
+            <span className="text-lg leading-none">›</span>
+          </button>
+        </nav>
+      )}
 
       {/* 모달: 라이트박스 + 우하단 안내판 */}
       {selected && (
