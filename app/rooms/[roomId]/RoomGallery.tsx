@@ -49,6 +49,22 @@ const ROWS_PER_PAGE = 4;
 const COLS_LG = 3;
 const ITEMS_PER_PAGE = ROWS_PER_PAGE * COLS_LG;
 
+/** 페이지가 많을 때 표시할 번호 + 생략( null ). 예: [1, null, 5, 6, 7, null, 20] */
+function getPaginationItems(currentPage: number, totalPages: number): (number | null)[] {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, i) => i + 1);
+  }
+  const result: (number | null)[] = [1];
+  const delta = 1;
+  const windowStart = Math.max(2, currentPage - delta);
+  const windowEnd = Math.min(totalPages - 1, currentPage + delta);
+  if (windowStart > 2) result.push(null);
+  for (let p = windowStart; p <= windowEnd; p++) result.push(p);
+  if (windowEnd < totalPages - 1) result.push(null);
+  if (totalPages > 1) result.push(totalPages);
+  return result;
+}
+
 export function RoomGallery({ roomTitle, items }: Props) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -128,22 +144,28 @@ export function RoomGallery({ roomTitle, items }: Props) {
             <span className="text-lg leading-none">‹</span>
           </button>
           <div className="flex items-center gap-1">
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-              <button
-                key={p}
-                type="button"
-                onClick={() => setCurrentPage(p)}
-                className={`min-w-[1.75rem] rounded px-1.5 py-1 text-xs leading-none transition-colors ${
-                  currentPage === p
-                    ? "bg-neutral-200 text-body font-medium"
-                    : "text-neutral-500 hover:bg-neutral-100 hover:text-body"
-                }`}
-                aria-label={`${p}페이지`}
-                aria-current={currentPage === p ? "page" : undefined}
-              >
-                {p}
-              </button>
-            ))}
+            {getPaginationItems(currentPage, totalPages).map((p, i) =>
+              p === null ? (
+                <span key={`ellipsis-${i}`} className="px-1 text-neutral-400" aria-hidden>
+                  …
+                </span>
+              ) : (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setCurrentPage(p)}
+                  className={`min-w-[1.75rem] rounded px-1.5 py-1 text-xs leading-none transition-colors ${
+                    currentPage === p
+                      ? "bg-neutral-200 text-body font-medium"
+                      : "text-neutral-500 hover:bg-neutral-100 hover:text-body"
+                  }`}
+                  aria-label={`${p}페이지`}
+                  aria-current={currentPage === p ? "page" : undefined}
+                >
+                  {p}
+                </button>
+              )
+            )}
           </div>
           <button
             type="button"
