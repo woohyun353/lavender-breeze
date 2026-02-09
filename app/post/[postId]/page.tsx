@@ -11,7 +11,7 @@ export default async function PostPage({ params }: Props) {
 
   const { data: row, error } = await supabase
     .from("posts")
-    .select("id, room_id, title, content, thumbnail, order")
+    .select("id, room_id, title, subtitle, content, thumbnail, order")
     .eq("id", postId)
     .single();
 
@@ -40,6 +40,9 @@ export default async function PostPage({ params }: Props) {
           <h1 className="text-3xl font-black tracking-tight text-body sm:text-4xl">
             {post.title || "(제목 없음)"}
           </h1>
+          {post.subtitle && (
+            <p className="mt-2 text-sm text-body/70">{post.subtitle}</p>
+          )}
           <hr className="mt-6 h-px w-full border-0 bg-black/70" />
           <div className="mt-8 whitespace-pre-wrap text-sm leading-relaxed text-body">
             {post.content ?? ""}

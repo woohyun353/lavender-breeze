@@ -24,6 +24,7 @@ export default function EditPostPage() {
   const [exhibition, setExhibition] = useState<Exhibition | null>(null);
   const [room, setRoom] = useState<Room | null>(null);
   const [title, setTitle] = useState("");
+  const [subtitle, setSubtitle] = useState("");
   const [content, setContent] = useState("");
   const [order, setOrder] = useState(0);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
@@ -58,6 +59,7 @@ export default function EditPostPage() {
         const p = data as Post;
         setPost(p);
         setTitle(p.title ?? "");
+        setSubtitle(p.subtitle ?? "");
         setContent(p.content ?? "");
         setOrder(p.order ?? 0);
         setLoading(false);
@@ -128,6 +130,7 @@ export default function EditPostPage() {
         .from("posts")
         .update({
           title: title.trim(),
+          subtitle: subtitle.trim() || null,
           content: content.trim() || null,
           thumbnail: thumbnailUrl,
           order: order,
@@ -196,6 +199,18 @@ export default function EditPostPage() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             required
+            className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
+          />
+        </div>
+        <div>
+          <label htmlFor="subtitle" className="mb-1 block text-sm font-medium text-neutral-700">
+            부제 (상세 페이지 제목 아래 표시)
+          </label>
+          <input
+            id="subtitle"
+            type="text"
+            value={subtitle}
+            onChange={(e) => setSubtitle(e.target.value)}
             className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
           />
         </div>

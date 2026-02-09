@@ -20,6 +20,7 @@ export default function NewPostPage() {
   const [exhibition, setExhibition] = useState<Exhibition | null>(null);
   const [room, setRoom] = useState<Room | null>(null);
   const [title, setTitle] = useState("");
+  const [subtitle, setSubtitle] = useState("");
   const [content, setContent] = useState("");
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [order, setOrder] = useState(0);
@@ -103,6 +104,7 @@ export default function NewPostPage() {
       const { error: insertError } = await supabaseClient.from("posts").insert({
         room_id: room.id,
         title: title.trim(),
+        subtitle: subtitle.trim() || null,
         content: content.trim() || null,
         thumbnail: thumbnailUrl,
         order: finalOrder,
@@ -149,6 +151,18 @@ export default function NewPostPage() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             required
+            className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
+          />
+        </div>
+        <div>
+          <label htmlFor="subtitle" className="mb-1 block text-sm font-medium text-neutral-700">
+            부제 (상세 페이지 제목 아래 표시)
+          </label>
+          <input
+            id="subtitle"
+            type="text"
+            value={subtitle}
+            onChange={(e) => setSubtitle(e.target.value)}
             className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
           />
         </div>
