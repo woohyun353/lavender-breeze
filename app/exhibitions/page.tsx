@@ -14,6 +14,27 @@ export default async function ExhibitionsPage() {
     .order("order", { ascending: true, nullsFirst: false });
   const exhibitions = (rows as Exhibition[]) ?? [];
 
+  const exhibitionIds = exhibitions.map((e) => e.id);
+  const firstRoomByExId: Record<string, { slug: string | null; id: string }> = {};
+  if (exhibitionIds.length > 0) {
+    const { data: roomRows } = await supabase
+      .from("rooms")
+      .select("id, slug, exhibition_id, order")
+      .in("exhibition_id", exhibitionIds)
+      .order("order", { ascending: true, nullsFirst: false });
+    const rooms = (roomRows as { id: string; slug: string | null; exhibition_id: string; order: number | null }[]) ?? [];
+    const sorted = [...rooms].sort(
+      (a, b) =>
+        (a.exhibition_id > b.exhibition_id ? 1 : a.exhibition_id < b.exhibition_id ? -1 : 0) ||
+        (a.order ?? 0) - (b.order ?? 0)
+    );
+    for (const r of sorted) {
+      if (firstRoomByExId[r.exhibition_id] === undefined) {
+        firstRoomByExId[r.exhibition_id] = { slug: r.slug, id: r.id };
+      }
+    }
+  }
+
   return (
     <main className="min-h-screen bg-background">
       <div className="mx-auto max-w-6xl px-6 pt-10 pb-16">
@@ -37,10 +58,15 @@ export default async function ExhibitionsPage() {
             {exhibitions.map((ex, idx) => {
               const isHero = idx === 0;
               const coverUrl = ex.cover_image ?? null;
+              const firstRoom = firstRoomByExId[ex.id];
+              const roomPath = firstRoom
+                ? (firstRoom.slug && !isUuid(firstRoom.slug) ? firstRoom.slug : firstRoom.id)
+                : null;
+              const href = roomPath ? `/rooms/${roomPath}` : `/exhibitions/${ex.slug}`;
               return (
                 <Link
                   key={ex.id}
-                  href={`/exhibitions/${ex.slug}`}
+                  href={href}
                   className="group block"
                 >
                   <div className="mx-auto w-full max-w-[320px]">

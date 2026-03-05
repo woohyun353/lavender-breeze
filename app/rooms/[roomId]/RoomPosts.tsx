@@ -25,10 +25,11 @@ function getPaginationItems(currentPage: number, totalPages: number): (number | 
 
 type Props = {
   roomTitle: string;
+  roomPath: string;
   posts: Post[];
 };
 
-export function RoomPosts({ roomTitle, posts }: Props) {
+export function RoomPosts({ roomTitle, roomPath, posts }: Props) {
   const [currentPage, setCurrentPage] = useState(1);
   const totalPages = Math.max(1, Math.ceil(posts.length / ITEMS_PER_PAGE));
   const start = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -50,10 +51,13 @@ export function RoomPosts({ roomTitle, posts }: Props) {
     <div className="py-8">
       <h2 className="sr-only">{roomTitle} — 글 목록</h2>
       <ul className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
-        {pagePosts.map((post) => (
+        {pagePosts.map((post, i) => {
+          const num = start + i + 1;
+          const indexStr = String(num).padStart(3, "0");
+          return (
           <li key={post.id}>
             <Link
-              href={`/post/${post.id}`}
+              href={`/rooms/${roomPath}/post/${indexStr}`}
               className="block overflow-hidden rounded-none bg-zinc-200/60 shadow-none transition hover:bg-zinc-200/80"
             >
               <div className="flex min-h-[180px] flex-col px-8 pt-8 pb-6">
@@ -70,7 +74,8 @@ export function RoomPosts({ roomTitle, posts }: Props) {
               </div>
             </Link>
           </li>
-        ))}
+          );
+        })}
       </ul>
 
       {totalPages > 1 && (

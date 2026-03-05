@@ -177,7 +177,11 @@ export default async function RoomPage({ params }: Props) {
       </header>
       <div className="mx-auto max-w-6xl px-6 sm:px-10">
         {isTextRoom ? (
-          <RoomPosts roomTitle={room.title} posts={posts} />
+          <RoomPosts
+            roomTitle={room.title}
+            roomPath={room.slug ?? room.id}
+            posts={posts}
+          />
         ) : (
           <RoomGallery roomTitle={room.title} items={items} />
         )}
