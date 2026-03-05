@@ -63,5 +63,7 @@ export default async function ExhibitionFirstRoomPage({ params }: Props) {
       </main>
     );
   }
-  redirect(result.redirect);
+  if ("redirect" in result) {
+    redirect(result.redirect);
+  }
 }
