@@ -1,24 +1,31 @@
 import Link from "next/link";
 import Image from "next/image";
+import { unstable_cache } from "next/cache";
 import { supabaseServerClient } from "@/lib/supabase/server";
 import type { MainPage } from "@/types/main-page";
-
-export const dynamic = "force-dynamic";
 
 const DEFAULT_OPENING_TEXT = `갤러리를 방문해 주셔서 감사합니다.
 이곳에서는 다양한 전시와 작품을 만나보실 수 있습니다.`;
 
-export default async function MainPage() {
+async function getMainPageData() {
   const supabase = supabaseServerClient();
   const { data: row } = await supabase
     .from("main_page")
     .select("main_image_url, opening_text")
     .eq("id", "main")
     .maybeSingle();
-
   const mainPage = row as Pick<MainPage, "main_image_url" | "opening_text"> | null;
-  const mainImageUrl = mainPage?.main_image_url ?? null;
-  const openingText = mainPage?.opening_text?.trim() || DEFAULT_OPENING_TEXT;
+  return {
+    mainImageUrl: mainPage?.main_image_url ?? null,
+    openingText: mainPage?.opening_text?.trim() || DEFAULT_OPENING_TEXT,
+  };
+}
+
+const getCachedMain = () =>
+  unstable_cache(getMainPageData, ["main-page"], { revalidate: 60 })();
+
+export default async function MainPage() {
+  const { mainImageUrl, openingText } = await getCachedMain();
 
   return (
     <main className="min-h-screen bg-background">

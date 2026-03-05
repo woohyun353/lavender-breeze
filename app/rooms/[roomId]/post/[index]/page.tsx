@@ -1,48 +1,57 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { unstable_cache } from "next/cache";
 import { isUuid } from "@/lib/uuid";
 import { supabaseServerClient } from "@/lib/supabase/server";
 import type { Post } from "@/types/post";
 import type { Room } from "@/types/room";
 
-export const dynamic = "force-dynamic";
-
 type Props = { params: Promise<{ roomId: string; index: string }> };
 
-export default async function RoomPostPage({ params }: Props) {
-  const { roomId, index: indexStr } = await params;
+async function getRoomPostData(roomId: string, indexNum: number): Promise<{
+  room: Pick<Room, "id" | "slug" | "title">;
+  post: Post;
+} | null> {
   const supabase = supabaseServerClient();
-
-  const indexNum = parseInt(indexStr, 10);
-  if (Number.isNaN(indexNum) || indexNum < 1) {
-    notFound();
-  }
-
   const { data: roomRow, error: roomError } = await supabase
     .from("rooms")
     .select("id, slug, title")
     .eq(isUuid(roomId) ? "id" : "slug", roomId)
     .maybeSingle();
-
-  if (roomError || !roomRow) {
-    notFound();
-  }
-
+  if (roomError || !roomRow) return null;
   const room = roomRow as Pick<Room, "id" | "slug" | "title">;
-  const roomPath = room.slug && !isUuid(room.slug) ? room.slug : room.id;
-
   const { data: postRows } = await supabase
     .from("posts")
     .select("id, room_id, title, subtitle, content, thumbnail, order")
     .eq("room_id", room.id)
     .order("order", { ascending: true, nullsFirst: false });
-
   const orderedPosts = (postRows as Post[]) ?? [];
   const post = orderedPosts[indexNum - 1];
+  if (!post) return null;
+  return { room, post };
+}
 
-  if (!post) {
+const getCachedRoomPost = (roomId: string, indexStr: string) =>
+  unstable_cache(
+    () => getRoomPostData(roomId, parseInt(indexStr, 10)),
+    ["room-post", roomId, indexStr],
+    { revalidate: 60 }
+  )();
+
+export default async function RoomPostPage({ params }: Props) {
+  const { roomId, index: indexStr } = await params;
+  const indexNum = parseInt(indexStr, 10);
+  if (Number.isNaN(indexNum) || indexNum < 1) {
     notFound();
   }
+
+  const data = await getCachedRoomPost(roomId, indexStr);
+  if (!data) {
+    notFound();
+  }
+
+  const { room, post } = data;
+  const roomPath = room.slug && !isUuid(room.slug) ? room.slug : room.id;
 
   return (
     <main className="min-h-screen bg-background">

@@ -1,19 +1,17 @@
 import Link from "next/link";
 import Image from "next/image";
+import { unstable_cache } from "next/cache";
 import { isUuid } from "@/lib/uuid";
 import { supabaseServerClient } from "@/lib/supabase/server";
 import type { Exhibition } from "@/types/exhibition";
 
-export const dynamic = "force-dynamic";
-
-export default async function ExhibitionsPage() {
+async function getExhibitionsData() {
   const supabase = supabaseServerClient();
   const { data: rows } = await supabase
     .from("exhibitions")
     .select("*")
     .order("order", { ascending: true, nullsFirst: false });
   const exhibitions = (rows as Exhibition[]) ?? [];
-
   const exhibitionIds = exhibitions.map((e) => e.id);
   const firstRoomByExId: Record<string, { slug: string | null; id: string }> = {};
   if (exhibitionIds.length > 0) {
@@ -34,6 +32,14 @@ export default async function ExhibitionsPage() {
       }
     }
   }
+  return { exhibitions, firstRoomByExId };
+}
+
+const getCachedExhibitions = () =>
+  unstable_cache(getExhibitionsData, ["exhibitions-list"], { revalidate: 60 })();
+
+export default async function ExhibitionsPage() {
+  const { exhibitions, firstRoomByExId } = await getCachedExhibitions();
 
   return (
     <main className="min-h-screen bg-background">
