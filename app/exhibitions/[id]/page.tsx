@@ -39,7 +39,7 @@ export default async function ExhibitionFirstRoomPage({ params }: Props) {
   const { id: exhibitionSlugOrId } = await params;
   const result = await getCachedFirstRoom(exhibitionSlugOrId);
 
-  if (result.notFound) {
+  if ("notFound" in result && result.notFound) {
     return (
       <main className="min-h-screen bg-background">
         <div className="mx-auto max-w-6xl px-6 py-16 text-center">
@@ -51,7 +51,7 @@ export default async function ExhibitionFirstRoomPage({ params }: Props) {
       </main>
     );
   }
-  if (result.noRooms) {
+  if ("noRooms" in result && result.noRooms) {
     return (
       <main className="min-h-screen bg-background">
         <div className="mx-auto max-w-6xl px-6 py-16 text-center">
