@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import type { Post } from "@/types/post";
 
@@ -30,6 +31,7 @@ type Props = {
 };
 
 export function RoomPosts({ roomTitle, roomPath, posts }: Props) {
+  const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
   const totalPages = Math.max(1, Math.ceil(posts.length / ITEMS_PER_PAGE));
   const start = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -58,6 +60,8 @@ export function RoomPosts({ roomTitle, roomPath, posts }: Props) {
           <li key={post.id}>
             <Link
               href={`/rooms/${roomPath}/post/${indexStr}`}
+              prefetch={true}
+              onMouseEnter={() => router.prefetch(`/rooms/${roomPath}/post/${indexStr}`)}
               className="block overflow-hidden rounded-none bg-zinc-200/60 shadow-none transition hover:bg-zinc-200/80"
             >
               <div className="flex min-h-[180px] flex-col px-8 pt-8 pb-6">

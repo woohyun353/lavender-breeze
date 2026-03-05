@@ -20,13 +20,14 @@ async function getRoomPostData(roomId: string, indexNum: number): Promise<{
     .maybeSingle();
   if (roomError || !roomRow) return null;
   const room = roomRow as Pick<Room, "id" | "slug" | "title">;
+  const from = indexNum - 1;
   const { data: postRows } = await supabase
     .from("posts")
     .select("id, room_id, title, subtitle, content, thumbnail, order")
     .eq("room_id", room.id)
-    .order("order", { ascending: true, nullsFirst: false });
-  const orderedPosts = (postRows as Post[]) ?? [];
-  const post = orderedPosts[indexNum - 1];
+    .order("order", { ascending: true, nullsFirst: false })
+    .range(from, from);
+  const post = (postRows as Post[])?.[0] ?? null;
   if (!post) return null;
   return { room, post };
 }
